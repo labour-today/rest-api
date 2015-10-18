@@ -107,7 +107,7 @@ class ContractorList(APIView):
         return Response(serializer.errors, status = status.HTTP_400_BAD_REQUEST)
     
     def get(self, request, *args, **kwargs):
-        contractor = Contractor.objects.get(user=request.user.id)
+        contractor = Contractor.objects.get(user_id=request.user.id)
         serializer = ContractorSerializer(contractor)
         return Response(serializer.data)
 
@@ -217,8 +217,8 @@ class PaymentList(APIView):
         try:
             message = client.messages.create(
                 body="Transaction successful! Your credit card has been charged $" + str(amount),
-                #to=contractor.phone_number,
-                to="+17788893349",
+                to=contractor.phone_number,
+                #to="+17788893349",
                 from_="+16042569605") # Replace with your Twilio number
 
             return Response(request.data, status=status.HTTP_200_OK)
