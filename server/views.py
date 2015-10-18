@@ -194,7 +194,7 @@ class PaymentList(APIView):
     permission_classes = (IsAuthenticated,)
 
     def post(self, request, format=None):
-        charge_amount = request.data.get('charge_amount')
+        charge_amount = float(request.data.get('charge_amount')) * 1900
         token = request.data.get('stripe_token')
         contractor = Contractor.objects.get(user_id = request.user.id)
         # Charge 
