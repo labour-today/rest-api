@@ -28,30 +28,22 @@ class UserSerializer(serializers.ModelSerializer):
     def validate_username(self, value):
         try:
             User.objects.get(username = value)
-            raise serializers.ValidationError('The username you specified is already taken. Please enter a different username')
-        except User.DoesNotExist:
-            return value
-
-    def validate_email(self, value):
-        try:
-            User.objects.get(email = value)
-            raise serializers.ValidationError('The email you specified is already in use. Please enter a different email address')
+            raise serializers.ValidationError('The email you entered is already in use. Enter another.')
         except User.DoesNotExist:
             return value
     
     class Meta:
         model = User
-        fields = ('id', 'first_name', 'last_name', 'username', 'password', 'email')
+        fields = ('id', 'first_name', 'last_name', 'username', 'password')
         
 
 class LabourerSerializer(serializers.ModelSerializer): 
     last_name = serializers.ReadOnlyField(source = 'user.last_name')
     first_name= serializers.ReadOnlyField(source = 'user.first_name')
-    email = serializers.ReadOnlyField(source = 'user.email')
     username = serializers.ReadOnlyField(source = 'user.username')
     class Meta:
         model = Labourer
-        fields = ('id', 'last_name', 'first_name', 'email', 'username', 'phone_number', 
+        fields = ('id', 'last_name', 'first_name', 'username', 'phone_number', 
                 'address', 'sin', 'user', 'device',
                 'carpentry', 'concrete_forming'
                 )
@@ -59,11 +51,10 @@ class LabourerSerializer(serializers.ModelSerializer):
 class ContractorSerializer(serializers.ModelSerializer): 
     last_name = serializers.ReadOnlyField(source = 'user.last_name')
     first_name= serializers.ReadOnlyField(source = 'user.first_name')
-    email = serializers.ReadOnlyField(source = 'user.email')
     username = serializers.ReadOnlyField(source = 'user.username')
 
     class Meta:
         model = Contractor
-        fields = ('id', 'first_name', 'last_name', 'email', 'username', 'phone_number',
+        fields = ('id', 'first_name', 'last_name', 'username', 'phone_number',
                 'company_name', 'device', 'user'
                 )

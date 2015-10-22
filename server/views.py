@@ -63,11 +63,11 @@ class LabourerDetail(APIView):
         # Check if user has a new registration id. Update it if there is 
         device_id = request.data.get('registration_id')
         if device_id != None:
-            device = profile.device 
+            device = labourer.device 
             device.registration_id = device_id;
             device.save();
          
-       # Check if user's email is the same as the one in the database, don't update it if it is
+       # Check if user's username(email) is the same as the one in the database, don't update it if it is
         oldEmail = request.user.username
         if (oldEmail == requestData.get('username') ):
             del requestData['username']
@@ -130,7 +130,7 @@ class ContractorDetail(APIView):
         #Check if user has a new device id. Update it if there is 
         device_id = request.data.get('registration_id')
         if device_id != None:
-            device = profile.device 
+            device = contractor.device 
             device.registration_id = device_id;
             device.save();
          
