@@ -59,17 +59,18 @@ class LabourerDetail(APIView):
         labourer = Labourer.objects.get(user_id = request.user.id) 
         requestData = request.data.copy() # Make a mutable copy of the request
         requestData['user'] = labourer.user_id # Set the user field to requesting user
-        #Check if user has a new device id. Update it if there is 
-        device_id = request.data.get('device_id')
+        
+        # Check if user has a new registration id. Update it if there is 
+        device_id = request.data.get('registration_id')
         if device_id != None:
             device = profile.device 
             device.registration_id = device_id;
             device.save();
          
-       #Check if user's email is the same as the one in the database, don't update it if it is
-        oldEmail = request.user.email
-        if (oldEmail == requestData.get('email') ):
-            del requestData['email']
+       # Check if user's email is the same as the one in the database, don't update it if it is
+        oldEmail = request.user.username
+        if (oldEmail == requestData.get('username') ):
+            del requestData['username']
 
         serializer = UserSerializer(request.user, data = requestData, partial=True)
         if serializer.is_valid():
@@ -127,16 +128,16 @@ class ContractorDetail(APIView):
         requestData = request.data.copy() # Make a mutable copy of the request
         requestData['user'] = contractor.user_id # Set the user field to requesting user
         #Check if user has a new device id. Update it if there is 
-        device_id = request.data.get('device_id')
+        device_id = request.data.get('registration_id')
         if device_id != None:
             device = profile.device 
             device.registration_id = device_id;
             device.save();
          
        #Check if user's email is the same as the one in the database, don't update it if it is
-        oldEmail = request.user.email
-        if (oldEmail == requestData.get('email') ):
-            del requestData['email']
+        oldEmail = request.user.username
+        if (oldEmail == requestData.get('username') ):
+            del requestData['username']
 
         serializer = UserSerializer(request.user, data = requestData, partial = True)
         if serializer.is_valid():
