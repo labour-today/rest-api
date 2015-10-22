@@ -46,7 +46,7 @@ class LabourerList(APIView):
 
 class UserList(APIView):
     def get(self, request, *args, **kwargs):
-        user = User.objects.get(id = request.user)
+        user = User.objects.get(id = request.user.id)
         serializer = UserSerializer(user)
         return Response(serializer.data)
 
