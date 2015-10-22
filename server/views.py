@@ -44,6 +44,12 @@ class LabourerList(APIView):
         serializer = LabourerSerializer(labourer)
         return Response(serializer.data)
 
+class UserList(APIView):
+    def get(self, request, *args, **kwargs):
+        user = User.objects.get(id = request.user)
+        serializer = UserSerializer(user)
+        return Response(serializer.data)
+
 class LabourerDetail(APIView):
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
