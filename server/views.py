@@ -201,7 +201,7 @@ class PaymentList(APIView):
     permission_classes = (IsAuthenticated,)
 
     def post(self, request, format=None):
-        charge_amount = float(request.data.get('charge_amount')) * 1900
+        charge_amount = float(request.data.get('hours_worked')) * 1900
         token = request.data.get('stripe_token')
         contractor = Contractor.objects.get(user_id = request.user.id)
         # Charge 
@@ -225,7 +225,6 @@ class PaymentList(APIView):
             message = client.messages.create(
                 body="Transaction successful! Your credit card has been charged $" + str(amount),
                 to=contractor.phone_number,
-                #to="+17788893349",
                 from_="+16042569605") # Replace with your Twilio number
 
             return Response(request.data, status=status.HTTP_200_OK)

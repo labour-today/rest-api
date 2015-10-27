@@ -7,18 +7,18 @@ from rest_framework.authtoken.models import Token
 from push_notifications.models import  GCMDevice
 
 class Labourer(models.Model):
-    address = models.CharField(max_length = 300, null = True, blank = True, default = None) # full address
+    address = models.CharField(max_length = 200, null = True, blank = True, default = None) # full address
     sin = models.CharField(max_length = 9, null = True, blank = True, default = None)
     user = models.ForeignKey(settings.AUTH_USER_MODEL)
     device = models.ForeignKey('push_notifications.GCMDevice', default = None)
-    phone_number = models.CharField(max_length = 12, null = True, blank = True, default = None)
-    
+    phone_number = models.CharField(max_length = 12)
+    rating = models.CharField(max_length = 5, null = True, blank = True, default = None)    
     # Labourer experience
-    carpentry = models.CharField(max_length = 30, null = True, blank = True, default = None)
-    concrete_forming = models.CharField(max_length = 30, null = True, blank = True, default = None)
+    carpentry = models.CharField(max_length = 3, null = True, blank = True, default = None)
+    concrete_forming = models.CharField(max_length = 3, null = True, blank = True, default = None)
     
     # availability
-    available = models.CharField(max_length = 3, null = True, blank = True, default = None)
+    available = models.CharField(max_length = 50, null = True, blank = True, default = None)
 
 
 class Contractor(models.Model):
