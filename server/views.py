@@ -32,15 +32,16 @@ class LabourerList(APIView):
         user = User.objects.get(username = request.data.get('username'))
         requestData = request.data.copy() # Make a mutable copy of the request
         requestData['user'] = user.id # Set the user field to requesting user
-        requestData['device'] = device.id 
+        requestData['device'] = device.id
 
         serializer = LabourerSerializer(data = requestData)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status = status.HTTP_201_CREATED)
         return Response(serializer.errors, status = status.HTTP_400_BAD_REQUEST)
+
     def get(self, request, *args, **kwargs):
-        labourer = Labourer.objects.get(user=request.user)
+        labourer = Labourer.objects.get(user=request.user.id)
         serializer = LabourerSerializer(labourer)
         return Response(serializer.data)
 
