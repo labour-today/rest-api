@@ -43,9 +43,9 @@ class LabourerSerializer(serializers.ModelSerializer):
     username = serializers.ReadOnlyField(source = 'user.username')
     class Meta:
         model = Labourer
-        fields = ('id', 'last_name', 'first_name', 'username', 'phone_number', 
-                'address', 'sin', 'user', 'device',
-                'carpentry', 'concrete_forming'
+        fields = ('id', 'last_name', 'first_name', 'available', 'username', 'phone_number', 
+                'address', 'sin', 'user', 'device', 'rating',
+                'carpentry', 'concrete_forming', 'general_labour'
                 )
 
 class ContractorSerializer(serializers.ModelSerializer): 

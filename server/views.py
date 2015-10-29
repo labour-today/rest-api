@@ -33,7 +33,7 @@ class LabourerList(APIView):
         requestData = request.data.copy() # Make a mutable copy of the request
         requestData['user'] = user.id # Set the user field to requesting user
         requestData['device'] = device.id
-
+        
         serializer = LabourerSerializer(data = requestData)
         if serializer.is_valid():
             serializer.save()
@@ -57,6 +57,16 @@ class LabourerDetail(APIView):
 
     # Modifies the profile of the requesting user
     def put(self, request, format = None): 
+        if request.data.get('worker_id') != None:
+            labourer = Labourer.objects.get(id = request.data.get('worker_id'))
+            worker_rating = float(labourer.rating[:-1])
+            num = int(labourer.rating[-1:])
+            worker_rating = "%0.2f" % (worker_rating + float(request.data.get('rating')))
+            num = num + 1
+            labourer.rating = str(worker_rating) + str(num)
+            labourer.save()
+            return Response(status = status.HTTP_200_OK)
+
         labourer = Labourer.objects.get(user_id = request.user.id) 
         requestData = request.data.copy() # Make a mutable copy of the request
         requestData['user'] = labourer.user_id # Set the user field to requesting user
@@ -70,16 +80,16 @@ class LabourerDetail(APIView):
          
        # Check if user's username(email) is the same as the one in the database, don't update it if it is
         oldEmail = request.user.username
-        if (oldEmail == requestData.get('username') ):
+        if (oldEmail == requestData.get('username')):
             del requestData['username']
 
-        serializer = UserSerializer(request.user, data = requestData, partial=True)
+        serializer = UserSerializer(request.user, data = requestData, partial = True)
         if serializer.is_valid():
             serializer.save()
         else:
             return Response(serializer.errors, status = status.HTTP_400_BAD_REQUEST)
 
-        serializer = LabourerSerializer(labourer, data = requestData, partial=True)
+        serializer = LabourerSerializer(labourer, data = requestData, partial = True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
@@ -168,7 +178,16 @@ class LabourerSearch(APIView):
         labourers = Labourer.objects.filter(
                 carpentry__gte = request.data.get('carpentry'),
                 concrete_forming__gte = request.data.get('concrete_forming'),
-                )[:10]
+                general_labour__gte = request.data.get('general_labour')
+                )
+        
+        for labourer in labourers:
+            print labourer.available[int(request.data.get('start_day'))]
+            print labourer.available[0]
+            if labourer.available[int(request.data.get('start_day'))] == 'F' and labourer.available[0] == 'F':
+                labourers = labourers.exclude(id = labourer.id)
+
+        #labourers.filter(available[int(request.data.get('start_day'))] = 'T')[:10] # Get only labourers that are available on the day
 
         if len(labourers) > 0:
             account_sid = "AC08df92424485a65eae07469de8b4f54a"
@@ -188,7 +207,7 @@ class LabourerSearch(APIView):
                                 + request.data.get('start_date') + "\nStart time (Hour Minute): "
                                 + request.data.get('start_time') + "\nAddress of the job: "
                                 + request.data.get('job_address') + "\nReply \"Accept\" followed by a space and the \"Job Code\" above to accept the job offer. "
-                                + "Example: \"Accept ajhp2015512325\" (without quotes)",
+                                + "\nExample:\n\"Accept ajhp2015512325\"\n(without quotes)",
                             to = labourer.phone_number,
                             from_="+16042569605")
                     return Response(request.data, status=status.HTTP_200_OK)
@@ -211,7 +230,7 @@ class PaymentList(APIView):
                 amount = int(charge_amount), # in cents
                 currency = "cad",
                 source = token,
-                description = "labour charge"
+                description = "Worker ID: " + request.data.get('worker_id')
             )
         except stripe.error.CardError, e:
             return Response(request.data, status=status.HTTP_400_BAD_REQUEST)
@@ -220,7 +239,7 @@ class PaymentList(APIView):
         auth_token  = "54b9efef9832db47965e5568dba86f3b" # Twilio API authentication token
         client = twilio.rest.TwilioRestClient(account_sid, auth_token) # consume the Twilio REST API
 
-        amount = '%.2f'%(int(charge_amount) / 100)
+        amount = '%.2f'%(float(charge_amount) / 100)
         
         try:
             message = client.messages.create(
@@ -239,7 +258,6 @@ class Twisponse(APIView):
         client = twilio.rest.TwilioRestClient(account_sid, auth_token)
         body = request.data.get('Body')
         bodyList = body.split(" ")
-        print bodyList[1] + "eaiwfjewio;afjewaio;fjaew;oifj" 
         if 'Accept' in body:
             try:
                 job = Job.objects.get(job_code = bodyList[1])
@@ -254,8 +272,11 @@ class Twisponse(APIView):
                 return Response(request.data, status = status.HTTP_201_CREATED) 
 
             contractor = Contractor.objects.get(id = job.contractor.id)
-            contractor.device.send_message("We have successfully found you a worker.")
-            
+            labourer = Labourer.objects.get(phone_number = request.data.get('From'))
+
+            contractor.device.send_message(
+                    "We have successfully found you a worker. Additional info will be sent to you via SMS." 
+            )
             job.expired = "true"
             job.save()
             # message the labourer
@@ -265,7 +286,13 @@ class Twisponse(APIView):
                 from_ = "+16042569605")
             # message the contractor
             message = client.messages.create(
-                body="We have found a worker for the job.",
+                body="We have found a worker for the job." + 
+                "\nWorker ID: " + str(labourer.id) +
+                "\nWorker name: " + labourer.user.first_name + " " + labourer.user.last_name +
+                "\nWorker phone number: " + str(labourer.phone_number) + 
+                "\nPlease keep this information on record for reference."
+                ,
                 to = contractor.phone_number,
-                from_ = "+16042569605")
+                from_ = "+16042569605"
+            )
             return Response(request.data, status = status.HTTP_201_CREATED)

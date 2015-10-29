@@ -12,11 +12,11 @@ class Labourer(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL)
     device = models.ForeignKey('push_notifications.GCMDevice', default = None)
     phone_number = models.CharField(max_length = 12)
-    rating = models.CharField(max_length = 5, null = True, blank = True, default = None)    
+    rating = models.CharField(max_length = 10, null = True, blank = True, default = None)    
     # Labourer experience
     carpentry = models.CharField(max_length = 3, null = True, blank = True, default = None)
     concrete_forming = models.CharField(max_length = 3, null = True, blank = True, default = None)
-    
+    general_labour = models.CharField(max_length = 2, null = True, blank = True, default = None) 
     # availability
     available = models.CharField(max_length = 50, null = True, blank = True, default = None)
 
