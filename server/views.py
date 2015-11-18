@@ -18,7 +18,7 @@ from rest_framework.permissions import IsAuthenticated
 
 from push_notifications.models import GCMDevice
 
-stripe.api_key = "sk_test_z1fxtlyji1zu4eZj5KaKQV9Q"
+stripe.api_key = "sk_live_02nvLJxbvApwGwFrXWkuHtQT"
 
 class LabourerList(APIView):
     def post(self, request, *args, **kwargs):
