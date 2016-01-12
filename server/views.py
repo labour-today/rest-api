@@ -18,7 +18,7 @@ from rest_framework.permissions import IsAuthenticated
 
 from push_notifications.models import GCMDevice
 
-stripe.api_key = "sk_live_02nvLJxbvApwGwFrXWkuHtQT"
+stripe.api_key = "sk_test_tpqZbhSJnsdSaWQmufF8X2us"
 
 class LabourerList(APIView):
     def post(self, request, *args, **kwargs):
@@ -111,13 +111,15 @@ class ContractorList(APIView):
             serializer.save()
         else:
             return Response(serializer.errors, status = status.HTTP_400_BAD_REQUEST)
-
         device = GCMDevice.objects.create(registration_id=request.data.get('registration_id')) # create new GCMDevice with the given registration_id
         user = User.objects.get(username = request.data.get('username'))
         requestData = request.data.copy() # Make a mutable copy of the request
         requestData['user'] = user.id # Set the user field to requesting user
         requestData['device'] = device.id 
-        
+        token = request.data.get('stripe_token')
+        customer = stripe.Customer.create(source=token, description="customer id " + str(user.id))
+        requestData['customer_id'] = customer
+        print requestData
         serializer = ContractorSerializer(data = requestData)
         if serializer.is_valid():
             serializer.save()
@@ -178,8 +180,19 @@ class LabourerSearch(APIView):
         labourers = Labourer.objects.filter(
                 carpentry__gte = request.data.get('carpentry'),
                 concrete_forming__gte = request.data.get('concrete_forming'),
-                general_labour__gte = request.data.get('general_labour')
-                )
+                general_labour__gte = request.data.get('general_labour'),
+                dry_walling__gte = request.data.get('dry_walling'),
+                painting__gte = request.data.get('painting'),
+                landscaping__gte = request.data.get('landscaping'),
+                machine_operating__gte = request.data.get('machine_operating'),
+                roofing__gte = request.data.get('roofing'),
+                brick_laying__gte = request.data.get('brick_laying'),
+                electrical__gte = request.data.get('electrical'),
+                plumbing__gte = request.data.get('plumbing'),
+                hat__gte = request.data.get('hat'),
+                vest__gte = request.data.get('vest'),
+                tool__gte = request.data.get('tool')
+        )
         
         for labourer in labourers:
             print labourer.available[int(request.data.get('start_day'))]
@@ -205,7 +218,8 @@ class LabourerSearch(APIView):
                             body = "You have a new job pending." + "\nJob code: "
                                 + request.data.get('job_code') + "\nStart date (YYYY MM DD): " 
                                 + request.data.get('start_date') + "\nStart time (Hour Minute): "
-                                + request.data.get('start_time') + "\nAddress of the job: "
+                                + request.data.get('start_time') + "\nWage paid: "
+                                + request.data.get('wage') + "\nAddress of the job: "
                                 + request.data.get('job_address') + "\nReply \"Accept\" followed by a space and the \"Job Code\" above to accept the job offer. "
                                 + "\nExample:\n\"Accept ajhp2015512325\"\n(without quotes)",
                             to = labourer.phone_number,
@@ -222,15 +236,13 @@ class PaymentList(APIView):
 
     def post(self, request, format=None):
         charge_amount = float(request.data.get('hours_worked')) * 1900
-        token = request.data.get('stripe_token')
         contractor = Contractor.objects.get(user_id = request.user.id)
         # Charge 
         try:
             charge = stripe.Charge.create(
                 amount = int(charge_amount), # in cents
                 currency = "cad",
-                source = token,
-                description = "Worker ID: " + request.data.get('worker_id')
+                customer = contractor.customer_id
             )
         except stripe.error.CardError, e:
             return Response(request.data, status=status.HTTP_400_BAD_REQUEST)
