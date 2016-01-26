@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from server.models import Labourer, Contractor
+from server.models import Labourer, Contractor, Job
 from django.contrib.auth.models import User
 
 class UserSerializer(serializers.ModelSerializer):
@@ -58,3 +58,9 @@ class ContractorSerializer(serializers.ModelSerializer):
         fields = ('id', 'first_name', 'last_name', 'username', 'phone_number',
                 'company_name', 'device', 'user', 'customer_id'
                 )
+
+class JobSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Job
+        fields = ('id', 'job_code', 'contractor', 'job_type', 'labourer', 'job_address', 'job_description', 'duration', 
+                'start_time', 'start_date', 'city', 'province', 'wage', 'expired')

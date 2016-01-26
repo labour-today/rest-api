@@ -8,7 +8,7 @@ import twilio.rest
 import twilio.twiml
 
 from server.models import Labourer, Contractor, Job
-from server.serializers import UserSerializer, LabourerSerializer, ContractorSerializer
+from server.serializers import UserSerializer, LabourerSerializer, ContractorSerializer, JobSerializer
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -51,12 +51,24 @@ class UserList(APIView):
         serializer = UserSerializer(user)
         return Response(serializer.data)
 
+class JobList(APIView):
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
+    
+    def get(self, request, *args, **kwargs):
+        worker = Labourer.objects.get(user = request.user.id)
+        jobs = Job.objects.filter(labourer = worker, expired = 'false')
+        serializer = JobSerializer(jobs, many=True)
+        return Response(serializer.data)
+
+
 class LabourerDetail(APIView):
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
 
     # Modifies the profile of the requesting user
-    def put(self, request, format = None): 
+    def put(self, request, format = None):
+        print request.body
         if request.data.get('worker_id') != None:
             labourer = Labourer.objects.get(id = request.data.get('worker_id'))
             worker_rating = float(labourer.rating[:-1])
@@ -119,7 +131,6 @@ class ContractorList(APIView):
         token = request.data.get('stripe_token')
         customer = stripe.Customer.create(source=token, description="customer id " + str(user.id))
         requestData['customer_id'] = customer
-        print requestData
         serializer = ContractorSerializer(data = requestData)
         if serializer.is_valid():
             serializer.save()
@@ -172,28 +183,39 @@ class ContractorDetail(APIView):
         contractor.delete()
         return Response(status = status.HTTP_204_NO_CONTENT)
 
+def requestDataGet(request, job):
+    req = request.data.get(job)
+    if req == None:
+        return 0
+    else:
+        return req
+
 class LabourerSearch(APIView):
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
     
     def post(self, request, *args, **kwargs):
         labourers = Labourer.objects.filter(
-                carpentry__gte = request.data.get('carpentry'),
-                concrete_forming__gte = request.data.get('concrete_forming'),
-                general_labour__gte = request.data.get('general_labour'),
-                dry_walling__gte = request.data.get('dry_walling'),
-                painting__gte = request.data.get('painting'),
-                landscaping__gte = request.data.get('landscaping'),
-                machine_operating__gte = request.data.get('machine_operating'),
-                roofing__gte = request.data.get('roofing'),
-                brick_laying__gte = request.data.get('brick_laying'),
-                electrical__gte = request.data.get('electrical'),
-                plumbing__gte = request.data.get('plumbing'),
+                carpentry__gte = requestDataGet(request, 'carpentry'),
+                concrete_forming__gte = requestDataGet(request,'concrete_forming'),
+                general_labour__gte = requestDataGet(request,'general_labour'),
+                dry_walling__gte = requestDataGet(request,'dry_walling'),
+                painting__gte = requestDataGet(request,'painting'),
+                landscaping__gte = requestDataGet(request,'landscaping'),
+                machine_operating__gte = requestDataGet(request,'machine_operating'),
+                roofing__gte = requestDataGet(request,'roofing'),
+                brick_laying__gte = requestDataGet(request,'brick_laying'),
+                electrical__gte = requestDataGet(request,'electrical'),
+                plumbing__gte = requestDataGet(request,'plumbing'),
                 hat__gte = request.data.get('hat'),
                 vest__gte = request.data.get('vest'),
                 tool__gte = request.data.get('tool')
         )
-        
+        print request.body
+        print "labourer"
+        for labourer in labourers:
+            print labourer
+
         for labourer in labourers:
             print labourer.available[int(request.data.get('start_day'))]
             print labourer.available[0]
@@ -203,30 +225,25 @@ class LabourerSearch(APIView):
         #labourers.filter(available[int(request.data.get('start_day'))] = 'T')[:10] # Get only labourers that are available on the day
 
         if len(labourers) > 0:
-            account_sid = "AC08df92424485a65eae07469de8b4f54a"
-            auth_token  = "54b9efef9832db47965e5568dba86f3b"
-            client = twilio.rest.TwilioRestClient(account_sid, auth_token)
             employer = Contractor.objects.get(user = request.user)
             
-            job = Job.objects.create(job_code = request.data.get('job_code'), contractor = employer, expired = "false")
+            job = Job.objects.create(
+                    job_code = request.data.get('job_code'),
+                    job_type = request.data.get('job_type'),
+                    contractor = employer, 
+                    expired = "false",
+                    job_address = request.data.get('job_address'),
+                    job_description = request.data.get('job_description'),
+                    start_time = request.data.get('start_time'),
+                    start_date = request.data.get('start_date'),
+                    city = request.data.get('city'),
+                    province = request.data.get('province'),
+                    wage = request.data.get('wage')
+            )
             
             for labourer in labourers:
-                labourer.device.send_message("You have a new job waiting for you. Check your text messages, and reply ASAP to secure the job")
                 job.labourer.add(labourer)
-                try:
-                    message = client.messages.create(
-                            body = "You have a new job pending." + "\nJob code: "
-                                + request.data.get('job_code') + "\nStart date (YYYY MM DD): " 
-                                + request.data.get('start_date') + "\nStart time (Hour Minute): "
-                                + request.data.get('start_time') + "\nWage paid: "
-                                + request.data.get('wage') + "\nAddress of the job: "
-                                + request.data.get('job_address') + "\nReply \"Accept\" followed by a space and the \"Job Code\" above to accept the job offer. "
-                                + "\nExample:\n\"Accept ajhp2015512325\"\n(without quotes)",
-                            to = labourer.phone_number,
-                            from_="+16042569605")
-                    return Response(request.data, status=status.HTTP_200_OK)
-                except twilio.TwilioRestException as e:
-                    return Response(request.data, status=status.HTTP_400_BAD_REQUEST)
+                labourer.device.send_message("You have a new job pending!")
         else:
             return Response(request.data, status=status.HTTP_404_NOT_FOUND)
 
@@ -262,6 +279,38 @@ class PaymentList(APIView):
             return Response(request.data, status=status.HTTP_200_OK)
         except twilio.TwilioRestException as e:
             return Response(request.data, status=status.HTTP_400_BAD_REQUEST)
+
+class LabourerResponse(APIView):
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request, format=None):
+        if request.data.get('option') == 'accept':
+            try:
+                job = Job.objects.get(job_code = request.data.get('job_code'))
+            except:
+                return Response(request.data, status = status.HTTP_400_BAD_REQUEST)
+
+            if job.expired == 'true':
+                labourer = Labourer.objects.get(user = request.user.id)
+                labourer.device.send_message("Sorry this position has already been filled")
+                return Response(request.data, status = status.HTTP_400_BAD_REQUEST)
+            
+            contractor = Contractor.objects.get(id = job.contractor.id)
+            job.expired = "true"
+            job.save()
+
+            contractor.device.send_message(
+                    "We have found a worker." + 
+                    "\nWorker ID: " + str(labourer.id) +
+                    "\nWorker name: " + labourer.user.first_name + " " + labourer.user.last_name +
+                    "\nWorker phone number: " + str(labourer.phone_number) +
+                    "\nPlease keep this information on record for reference."
+                    )
+            return Response(request.data, status = status.HTTP_201_CREATED)
+
+
+
 
 class Twisponse(APIView):
     def post(self, request, format=None):  

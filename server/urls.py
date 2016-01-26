@@ -11,5 +11,7 @@ urlpatterns = format_suffix_patterns([
     url(r'contractor-list/', views.ContractorList.as_view()), 
     url(r'contractor-detail/', views.ContractorDetail.as_view()),
     url(r'labourer-search/', views.LabourerSearch.as_view()),
+    url(r'job-list/', views.JobList.as_view()),
+    url(r'labourer-response/', views.LabourerResponse.as_view()),
 ])
 

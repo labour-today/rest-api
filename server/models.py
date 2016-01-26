@@ -44,10 +44,20 @@ class Contractor(models.Model):
     customer_id = models.CharField(max_length = 10000, null = True, blank = True, default = None)
 
 class Job(models.Model):
-    job_code = models.CharField(max_length = 50)
+    job_code = models.CharField(max_length = 50) 
+    job_type = models.CharField(max_length = 100)
     contractor = models.ForeignKey('Contractor')
     labourer = models.ManyToManyField('Labourer', related_name = "job")
+    start_time = models.CharField(max_length = 50)
+    start_date = models.CharField(max_length = 50) 
+    city = models.CharField(max_length = 50)
+    province = models.CharField(max_length = 20)
+    wage = models.CharField(max_length = 10)
     expired = models.CharField(max_length = 5)
+
+    job_address = models.CharField(max_length = 200)    
+    duration = models.CharField(max_length = 50)
+    job_description = models.CharField(max_length = 500)
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_auth_token(sender, instance = None, created = False, **kwargs):
