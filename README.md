@@ -1,6 +1,6 @@
-  # The API #
+#### Labour Today API####
   
-  This is a Python Django application that serves as the API for the Labour Today database, containing information on workers, contractors and jobs.
+This is a Python Django application that serves as the API for the Labour Today database, containing information on workers, contractors and jobs.
   The main structure are as follows: <br> <br>
   **urls.py** - Defines the URI routes for each resource in the REST API <br>
   **models.py** - The schema for the database expressed as models from Django's ORM <br>
